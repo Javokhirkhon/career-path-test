@@ -17,6 +17,7 @@ const App = () => {
   const [isCreating, setIsCreating] = useState(false)
   const [date, setDate] = useState('')
 
+  // This useEffect sets a default user parameter in the URL if none is provided.
   useEffect(() => {
     if (!userParam) {
       const defaultUser = 'javokhirkhon_sharipkhonov'
@@ -25,11 +26,13 @@ const App = () => {
     }
   }, [userParam])
 
+  // This function fetches questions from the API based on the user parameter.
   const fetchQuestions = useCallback(() => {
     axios
       .get(API_URL + 'questions', { params: { user: userParam } })
       .then((res) => {
         if (res.status === 200) {
+          // Set the retrieved questions in the component's state.
           setQuestions(
             res.data.questions.map(
               ({ id, text }: { id: string; text: string }) => ({
@@ -44,10 +47,11 @@ const App = () => {
         }
       })
       .catch((err) => {
-        alert(err.response.data.message)
+        console.error(err)
       })
   }, [userParam])
 
+  // This useEffect fetches submissions and updates the date. It also handles cleanup.
   useEffect(() => {
     let isMounted = true
     setIsLoading(true)
@@ -57,6 +61,7 @@ const App = () => {
       .then((res) => {
         if (!isMounted) return
         if (res.status === 200) {
+          // Set the latest submission date in the component's state.
           setDate(res.data.latestSubmission)
         } else {
           console.error('Network response was not ok')
@@ -65,17 +70,20 @@ const App = () => {
       .catch((err) => {
         if (!isMounted) return
         if (err.response.status === 404) {
+          // If a 404 error occurs, call the fetchQuestions function.
           fetchQuestions()
         }
-        alert(err.response.data.message)
+        console.error(err)
       })
       .finally(() => setIsLoading(false))
 
+    // Cleanup function to prevent potential memory leaks.
     return () => {
       isMounted = false
     }
   }, [fetchQuestions, userParam])
 
+  // This function handles selecting an option for a question and scrolling to the next question.
   const handleNextQuestion = (questionIndex: number, option: number) => {
     const updatedQuestions = [...questions]
 
@@ -84,6 +92,7 @@ const App = () => {
       answer: option,
     }
 
+    // Update the component's state with the selected answer.
     setQuestions(updatedQuestions)
 
     const scrollTarget = document.getElementById(
@@ -92,11 +101,13 @@ const App = () => {
 
     if (scrollTarget) {
       setTimeout(() => {
+        // Scroll to the next question smoothly.
         scrollTarget.scrollIntoView({ behavior: 'smooth' })
       }, 250)
     }
   }
 
+  // This function handles submitting answers to the API and updates the submission date.
   const handleSubmit = async () => {
     setIsCreating(true)
 
@@ -115,7 +126,7 @@ const App = () => {
       )
       .then((res) => setDate(res.data.submissionDate))
       .catch((err) => {
-        alert(err.response.data.message)
+        console.error(err)
       })
       .finally(() => setIsCreating(false))
   }
